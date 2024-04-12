@@ -3,6 +3,8 @@ services:
     build:
       context: ./pleasanter
       dockerfile: Dockerfile
+      args:
+        PLEASANTER_VERSION: ${PLEASANTER_VERSION}
     environment:
         - Implem.Pleasanter_Rds_PostgreSQL_SaConnectionString=${Implem_Pleasanter_Rds_PostgreSQL_SaConnectionString}
         - Implem.Pleasanter_Rds_PostgreSQL_OwnerConnectionString=${Implem_Pleasanter_Rds_PostgreSQL_OwnerConnectionString}
@@ -10,7 +12,8 @@ services:
     ports:
       - ${PLEASANTER_PUBLIC_PORT}:8080
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   db:
     image: postgres:15
@@ -20,6 +23,11 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
     volumes:
       - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: pg_isready -U "${POSTGRES_USER}"
+      interval: 2s
+      timeout: 5s
+      retries: 5
 
 volumes:
   db_data:
